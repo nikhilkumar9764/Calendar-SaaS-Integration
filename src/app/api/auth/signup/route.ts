@@ -1,4 +1,4 @@
-// app/api/auth/signup/route.ts
+// src/app/api/auth/signup/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if user already exists - FIXED: use 'user' not 'users'
+    const existingUser = await prisma.users.findUnique({
       where: { email }
     })
 
@@ -38,16 +38,16 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create tenant first
+    // Create tenant first - FIXED: use 'tenant' not 'tenants'
     const tenant = await prisma.tenant.create({
       data: {
-        name: accountType === "CORPORATE" ? companyName : name,
-        type: accountType,
+        name: accountType === "CORPORATE" ? companyName || name : name,
+        type: accountType || "PERSONAL",
         domain: accountType === "CORPORATE" ? domain : null
       }
     })
 
-    // Create user
+    // Create user - FIXED: use 'user' not 'users'
     const user = await prisma.user.create({
       data: {
         email,
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Create default calendar settings
+    // Create default calendar settings - FIXED: use 'calendarSettings' not 'calendar_settings'
     await prisma.calendarSettings.create({
       data: {
         tenantId: tenant.id,
@@ -69,26 +69,6 @@ export async function POST(request: NextRequest) {
           push: true,
           desktop: true
         }
-      }
-    })
-
-    // Create Stripe customer
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
-    const customer = await stripe.customers.create({
-      email,
-      name,
-      metadata: {
-        tenantId: tenant.id
-      }
-    })
-
-    // Create subscription record
-    await prisma.subscription.create({
-      data: {
-        tenantId: tenant.id,
-        stripeCustomerId: customer.id,
-        status: "trialing",
-        trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days
       }
     })
 

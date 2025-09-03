@@ -28,6 +28,7 @@ export function LoginForm() {
       })
 
       if (result?.ok) {
+        console.log("everything is ok!!");
         router.push("/dashboard")
       } else {
         console.error("Login failed")
@@ -74,7 +75,7 @@ export function LoginForm() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
-            <Link href="/signup" className="text-blue-600 hover:underline">
+            <Link href="/auth/signup" className="text-blue-600 hover:underline">
               Sign up
             </Link>
           </p>
